@@ -32,18 +32,18 @@ td.c{cursor:pointer}td.td0,th.td0{outline:2px solid var(--acc);outline-offset:-2
 .item{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding:5px 0}
 textarea{width:100%;height:110px;font:12px monospace}
 </style></head><body><main>
-<h1>Arcese Deutschland</h1><p class="sub">Live Roster: Früh, Spät, Tag, Frei, Urlaub, Krank. Cell par tap karke badlein.</p>
-<p class="card" id="note" style="color:var(--bad)" hidden>Server se connection nahi ho raha. Laptop on aur server chalta hua hona chahiye.</p>
+<h1>Arcese Deutschland</h1><p class="sub">Live-Dienstplan: Früh, Spät, Tag, Frei, Urlaub, Krank. Zelle antippen, um die Schicht zu ändern.</p>
+<p class="card" id="note" style="color:var(--bad)" hidden>Keine Verbindung zum Server. Bitte später erneut versuchen.</p>
 <section class="card"><h2 id="tt"></h2><div class="sum" id="sum"></div></section>
-<section class="card"><div class="nav"><button id="pm" aria-label="Pichla mahina">&lt;</button><strong id="ml"></strong><button id="nm" aria-label="Agla mahina">&gt;</button></div>
+<section class="card"><div class="nav"><button id="pm" aria-label="Vorheriger Monat">&lt;</button><strong id="ml"></strong><button id="nm" aria-label="Nächster Monat">&gt;</button></div>
 <div class="scroll"><table id="g"></table></div>
 <div class="leg" id="leg" style="margin-top:8px"></div></section>
-<section class="card"><h2>Naya mahina / roster import</h2>
-<p class="sub" style="margin-bottom:6px">Excel mein roster select karein (naam wali column aur date wali row samet), copy karein, yahan paste karke Import dabayen. Naye naam khud add ho jate hain.</p>
-<textarea id="paste" placeholder="Yahan paste karein"></textarea>
-<p><button class="p" id="imp">Import karein</button> <span id="impm"></span></p></section>
-<section class="card"><h2>Employees</h2>
-<div style="display:flex;gap:8px;flex-wrap:wrap"><input id="en" placeholder="Naam"><button class="p" id="ae">Add karein</button></div>
+<section class="card"><h2>Neuer Monat / Dienstplan importieren</h2>
+<p class="sub" style="margin-bottom:6px">In Excel den Dienstplan markieren (Namensspalte und Datumszeile mit einschließen), kopieren, hier einfügen und auf „Importieren“ klicken. Neue Namen werden automatisch angelegt.</p>
+<textarea id="paste" placeholder="Hier einfügen"></textarea>
+<p><button class="p" id="imp">Importieren</button> <span id="impm"></span></p></section>
+<section class="card"><h2>Mitarbeiter</h2>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><input id="en" placeholder="Name"><button class="p" id="ae">Hinzufügen</button></div>
 <div id="el"></div></section>
 </main>
 <div id="sheet" hidden><strong id="st"></strong><div class="b" id="sb"></div></div>
@@ -57,7 +57,7 @@ function iso(y,m,d){return y+"-"+z(m+1)+"-"+z(d)}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
 var now=new Date(),TODAY=iso(now.getFullYear(),now.getMonth(),now.getDate());
 function api(m,u,b){return fetch(u,{method:m,headers:{"Content-Type":"application/json","x-key":KEY},body:b?JSON.stringify(b):undefined}).then(function(r){
- if(r.status==401){var k=prompt("Admin password daalein:");if(!k)throw 0;KEY=k;try{localStorage.setItem("key",k)}catch(e){}return api(m,u,b)}
+ if(r.status==401){var k=prompt("Admin-Passwort eingeben:");if(!k)throw 0;KEY=k;try{localStorage.setItem("key",k)}catch(e){}return api(m,u,b)}
  if(!r.ok)throw 0;return r.json()}).then(function(x){load();return x})}
 function load(){fetch("/api/data").then(function(r){return r.json()}).then(function(d){S=d;$("note").hidden=true;draw()}).catch(function(){$("note").hidden=false})}
 function draw(){
@@ -71,13 +71,13 @@ function draw(){
   for(var d=1;d<=dn;d++){var k=iso(y,m,d),c=S.shifts[e.id+"|"+k],i=C.indexOf(c),w=new Date(y,m,d).getDay();
    h+='<td class="c '+(w%6==0?"we ":"")+(i>-1?"c"+i:"")+'" data-e="'+e.id+'" data-d="'+k+'">'+(c?esc(c):"")+"</td>"}
   h+="</tr>"});
- $("g").innerHTML=emps.length?h:"<tr><td>Pehle employees add ya import karein.</td></tr>";
+ $("g").innerHTML=emps.length?h:"<tr><td>Bitte zuerst Mitarbeiter hinzufügen oder importieren.</td></tr>";
  var g={};emps.forEach(function(e){var c=S.shifts[e.id+"|"+TODAY];if(c)(g[c]=g[c]||[]).push(e.name)});
- $("tt").textContent="Aaj ("+WD[now.getDay()]+", "+TODAY+")";
- $("sum").innerHTML=C.filter(function(c){return g[c]}).map(function(c){return'<div class="c'+C.indexOf(c)+'"><b>'+g[c].length+"</b>"+c+"<small>"+g[c].map(esc).join(", ")+"</small></div>"}).join("")||'<span class="sub">Aaj ke liye koi shift nahi daali gayi.</span>';
- $("el").innerHTML=emps.map(function(e){return'<div class="item"><span>'+esc(e.name)+'</span><button data-del="'+e.id+'">Delete</button></div>'}).join("")}
+ $("tt").textContent="Heute ("+WD[now.getDay()]+", "+TODAY+")";
+ $("sum").innerHTML=C.filter(function(c){return g[c]}).map(function(c){return'<div class="c'+C.indexOf(c)+'"><b>'+g[c].length+"</b>"+c+"<small>"+g[c].map(esc).join(", ")+"</small></div>"}).join("")||'<span class="sub">Für heute sind noch keine Schichten eingetragen.</span>';
+ $("el").innerHTML=emps.map(function(e){return'<div class="item"><span>'+esc(e.name)+'</span><button data-del="'+e.id+'">Löschen</button></div>'}).join("")}
 $("leg").innerHTML=C.map(function(c,i){return'<span class="c'+i+'">'+c+"</span>"}).join("");
-$("sb").innerHTML=C.map(function(c,i){return'<button class="c'+i+'" data-c="'+c+'">'+c+"</button>"}).join("")+'<button data-c="">Clear</button><button data-c="#">Band karein</button>';
+$("sb").innerHTML=C.map(function(c,i){return'<button class="c'+i+'" data-c="'+c+'">'+c+"</button>"}).join("")+'<button data-c="">Leeren</button><button data-c="#">Schließen</button>';
 $("g").onclick=function(ev){var t=ev.target;if(!t.dataset.e)return;P={e:t.dataset.e,d:t.dataset.d};
  var e=S.emps.filter(function(x){return x.id===P.e})[0];$("st").textContent=(e?e.name:"")+" | "+P.d;$("sheet").hidden=false};
 $("sb").onclick=function(ev){var c=ev.target.dataset.c;if(c===undefined)return;$("sheet").hidden=true;if(c==="#"||!P)return;
@@ -86,17 +86,17 @@ $("sb").onclick=function(ev){var c=ev.target.dataset.c;if(c===undefined)return;$
 $("pm").onclick=function(){cur.setMonth(cur.getMonth()-1);draw()};
 $("nm").onclick=function(){cur.setMonth(cur.getMonth()+1);draw()};
 $("ae").onclick=function(){var n=$("en").value.trim();if(!n)return;$("en").value="";api("POST","/api/emps",{name:n}).catch(load)};
-document.addEventListener("click",function(ev){var id=ev.target.dataset.del;if(id&&confirm("Employee aur uski saari shifts delete karein?"))api("DELETE","/api/emps/"+id).catch(load)});
+document.addEventListener("click",function(ev){var id=ev.target.dataset.del;if(id&&confirm("Mitarbeiter und alle Schichten löschen?"))api("DELETE","/api/emps/"+id).catch(load)});
 function toISO(s){s=(s||"").trim();var m=s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2}|\d{4})$/);if(m)return(m[3].length==2?"20"+m[3]:m[3])+"-"+z(m[2])+"-"+z(m[1]);return/^\d{4}-\d{2}-\d{2}$/.test(s)?s:null}
 var MAP={"früh":"Früh","frueh":"Früh","fruh":"Früh","spät":"Spät","spaet":"Spät","spat":"Spät","tag":"Tag","frei":"Frei","u":"U","urlaub":"U","krank":"Krank","su":"SU","feiert.":"Feiert.","feiert":"Feiert.","feiertag":"Feiert."};
 $("imp").onclick=function(){var L=$("paste").value.split(/\r?\n/).map(function(l){return l.split("\t")}),hi=-1,ds=[];
  for(var i=0;i<L.length&&hi<0;i++){var a=L[i].map(toISO);if(a.filter(Boolean).length>=3){hi=i;ds=a}}
- if(hi<0){$("impm").textContent="Date wali row nahi mili (jaise 05.10.26). Header row bhi copy karein.";return}
+ if(hi<0){$("impm").textContent="Keine Datumszeile gefunden (z. B. 05.10.26). Bitte die Kopfzeile mit kopieren.";return}
  var rows=[];for(var j=hi+1;j<L.length;j++){var nm=(L[j][0]||"").trim();if(!nm)continue;var sh={};
   ds.forEach(function(d,x){if(d){var c=MAP[(L[j][x]||"").trim().toLowerCase()];if(c)sh[d]=c}});
   if(Object.keys(sh).length)rows.push({name:nm,shifts:sh})}
- if(!rows.length){$("impm").textContent="Koi shift nahi mili. Check karein ke Früh/Spät/Frei wagera copy hua hai.";return}
- $("impm").textContent="Import ho raha hai...";
- api("POST","/api/bulk",{rows:rows}).then(function(){$("impm").textContent=rows.length+" employees import ho gaye.";$("paste").value="";var f=ds.filter(Boolean)[0].split("-");cur=new Date(+f[0],+f[1]-1,1);draw()}).catch(function(){$("impm").textContent="Import fail hua."})};
+ if(!rows.length){$("impm").textContent="Keine Schichten gefunden. Bitte prüfen, ob Früh/Spät/Frei mitkopiert wurden.";return}
+ $("impm").textContent="Import läuft...";
+ api("POST","/api/bulk",{rows:rows}).then(function(){$("impm").textContent=rows.length+" Mitarbeiter importiert.";$("paste").value="";var f=ds.filter(Boolean)[0].split("-");cur=new Date(+f[0],+f[1]-1,1);draw()}).catch(function(){$("impm").textContent="Import fehlgeschlagen."})};
 load();setInterval(function(){if($("sheet").hidden)load()},4000);
 </script></body></html>
