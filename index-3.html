@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e7c86">
+<title>Arcese Deutschland – Dienstplan</title>
+<style>
+:root {
+  --bg: #f0f4f5;
+  --card: #ffffff;
+  --ink: #1a2b33;
+  --mute: #5c7280;
+  --line: #d5e0e5;
+  --acc: #0d7377;
+  --acc-hover: #0a5c5f;
+  --bad: #c62828;
+  --shadow: 0 2px 12px rgba(20, 40, 50, 0.06);
+  --radius: 14px;
+  --radius-sm: 8px;
+}
+:root[data-theme="dark"] {
+  --bg: #0d1518;
+  --card: #162226;
+  --ink: #e8f0f3;
+  --mute: #8fa3ad;
+  --line: #243338;
+  --acc: #4db6c0;
+  --acc-hover: #6ecad2;
+  --bad: #ef9a9a;
+  --shadow: 0 2px 16px rgba(0, 0, 0, 0.35);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1518;
+    --card: #162226;
+    --ink: #e8f0f3;
+    --mute: #8fa3ad;
+    --line: #243338;
+    --acc: #4db6c0;
+    --acc-hover: #6ecad2;
+    --bad: #ef9a9a;
+    --shadow: 0 2px 16px rgba(0, 0, 0, 0.35);
+  }
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.5 "Segoe UI", system-ui, -apple-system, sans-serif;
+  padding: env(safe-area-inset-top, 0) 0 env(safe-area-inset-bottom, 0);
+  min-height: 100vh;
+}
+main { max-width: 1280px; margin: 0 auto; padding: 16px 14px 40px; }
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.header h1 {
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.sub {
+  color: var(--mute);
+  font-size: 0.9rem;
+  margin-bottom: 16px;
+}
+#theme {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 50px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+#theme:hover { border-color: var(--acc); }
+
+/* Cards */
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow);
+}
+.card h2 {
+  font-size: 1rem;
+  font-weight: 650;
+  margin-bottom: 10px;
+  letter-spacing: -0.01em;
+}
+
+/* Buttons */
+button, input, textarea {
+  font: inherit;
+  padding: 9px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--ink);
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+button { cursor: pointer; }
+button:active { transform: scale(0.97); }
+button.p {
+  background: var(--acc);
+  color: #fff;
+  border-color: var(--acc);
+  font-weight: 600;
+  padding: 10px 18px;
+}
+button.p:hover { background: var(--acc-hover); }
+button:focus-visible, input:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: 2px;
+}
+[hidden] { display: none !important; }
+
+/* Today summary */
+.sum {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+.sum div {
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-weight: 500;
+}
+.sum b {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-right: 6px;
+}
+.sum small {
+  display: block;
+  line-height: 1.35;
+  margin-top: 4px;
+  opacity: 0.85;
+  font-size: 0.82rem;
+}
+
+/* Nav */
+.nav {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.nav strong {
+  flex: 1;
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 650;
+  text-transform: capitalize;
+}
+.nav button {
+  min-width: 42px;
+  height: 38px;
+  font-weight: 600;
+  background: var(--bg);
+}
+
+/* Table */
+.scroll {
+  overflow: auto;
+  max-height: 70vh;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  -webkit-overflow-scrolling: touch;
+}
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 12px;
+  width: max-content;
+  min-width: 100%;
+}
+th, td {
+  border-bottom: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  padding: 0;
+  text-align: center;
+  min-width: 48px;
+  height: 34px;
+}
+th {
+  position: sticky;
+  top: 0;
+  background: var(--card);
+  z-index: 2;
+  line-height: 1.25;
+  padding: 6px 2px;
+  font-weight: 600;
+  font-size: 11px;
+  color: var(--mute);
+}
+th:first-child, td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background: var(--card);
+  text-align: left;
+  min-width: 155px;
+  max-width: 155px;
+  padding: 0 10px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+th:first-child { z-index: 4; }
+th.we { color: var(--bad); }
+td.we { background-image: linear-gradient(rgba(128,128,128,0.08), rgba(128,128,128,0.08)); }
+td.c { cursor: pointer; transition: filter 0.1s; }
+td.c:hover { filter: brightness(0.92); }
+td.td0, th.td0 {
+  outline: 2px solid var(--acc);
+  outline-offset: -2px;
+}
+
+/* Shift colors */
+.c0 { background: rgba(33, 150, 243, 0.28); }   /* Früh */
+.c1 { background: rgba(103, 58, 183, 0.28); }   /* Spät */
+.c2 { background: rgba(255, 193, 7, 0.35); }    /* Tag */
+.c3 { background: rgba(244, 67, 54, 0.38); }    /* Frei */
+.c4 { background: rgba(76, 175, 80, 0.38); }    /* U */
+.c5 { background: rgba(255, 152, 0, 0.38); }    /* Krank */
+.c6 { background: rgba(3, 169, 244, 0.32); }    /* SU */
+.c7 { background: rgba(158, 158, 158, 0.30); }  /* Feiert. */
+
+/* Legend */
+.leg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: 12px;
+}
+.leg span {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+/* Bottom sheet */
+#sheet {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  background: var(--card);
+  border-top: 1px solid var(--line);
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  z-index: 20;
+  box-shadow: 0 -8px 30px rgba(0,0,0,0.18);
+  border-radius: 18px 18px 0 0;
+  animation: slideUp 0.2s ease;
+}
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+#sheet strong {
+  font-size: 1rem;
+  display: block;
+  margin-bottom: 4px;
+}
+#sheet label {
+  display: block;
+  margin: 10px 0 6px;
+  font-size: 0.85rem;
+  color: var(--mute);
+}
+#sheet .b {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+}
+#sheet button {
+  padding: 12px 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+/* Employees list */
+.item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  padding: 10px 0;
+  font-weight: 500;
+}
+.item:last-child { border-bottom: none; }
+.item button {
+  font-size: 0.8rem;
+  padding: 5px 12px;
+  color: var(--bad);
+  border-color: transparent;
+  background: transparent;
+}
+.item button:hover {
+  background: rgba(198, 40, 40, 0.08);
+  border-color: var(--line);
+}
+
+textarea {
+  width: 100%;
+  height: 110px;
+  font: 12px/1.4 ui-monospace, "Cascadia Code", monospace;
+  resize: vertical;
+  margin-bottom: 10px;
+}
+#en { height: 90px; }
+
+#note {
+  color: var(--bad);
+  font-weight: 500;
+  border-color: rgba(198, 40, 40, 0.3);
+  background: rgba(198, 40, 40, 0.06);
+}
+
+/* Mobile tweaks */
+@media (max-width: 600px) {
+  main { padding: 12px 10px 32px; }
+  .header h1 { font-size: 1.25rem; }
+  th:first-child, td:first-child {
+    min-width: 120px;
+    max-width: 120px;
+  }
+  td, th { min-width: 42px; height: 32px; }
+  #sheet .b { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+<main>
+  <div class="header">
+    <h1>Arcese Deutschland</h1>
+    <button id="theme" type="button" aria-label="Theme wechseln"></button>
+  </div>
+  <p class="sub">Live-Dienstplan · Zelle antippen, um die Schicht zu ändern</p>
+
+  <p class="card" id="note" hidden>Keine Verbindung zum Server. Bitte später erneut versuchen.</p>
+
+  <section class="card">
+    <h2 id="tt"></h2>
+    <div class="sum" id="sum"></div>
+  </section>
+
+  <section class="card">
+    <div class="nav">
+      <button id="pm" type="button" aria-label="Vorheriger Monat">&lt;</button>
+      <button id="td" type="button">Heute</button>
+      <strong id="ml"></strong>
+      <button id="nm" type="button" aria-label="Nächster Monat">&gt;</button>
+    </div>
+    <div class="scroll"><table id="g"></table></div>
+    <div class="leg" id="leg"></div>
+  </section>
+
+  <section class="card">
+    <h2>Neuer Monat / Dienstplan importieren</h2>
+    <p class="sub" style="margin-bottom:8px">In Excel den Dienstplan markieren (Namensspalte + Datumszeile), kopieren, hier einfügen und „Importieren“ klicken.</p>
+    <textarea id="paste" placeholder="Hier einfügen…"></textarea>
+    <p><button class="p" id="imp" type="button">Importieren</button> <span id="impm"></span></p>
+  </section>
+
+  <section class="card">
+    <h2>Mitarbeiter</h2>
+    <textarea id="en" placeholder="Ein Name pro Zeile (mehrere auf einmal möglich)"></textarea>
+    <p><button class="p" id="ae" type="button">Hinzufügen</button></p>
+    <div id="el"></div>
+  </section>
+</main>
+
+<div id="sheet" hidden>
+  <strong id="st"></strong>
+  <label>Bis Datum (optional): <input type="date" id="until"></label>
+  <div class="b" id="sb"></div>
+</div>
+
+<script>
+var C=["Früh","Spät","Tag","Frei","U","Krank","SU","Feiert."],WD=["So","Mo","Di","Mi","Do","Fr","Sa"];
+var S={emps:[],shifts:{}},P=null,KEY="";try{KEY=localStorage.getItem("key")||""}catch(e){}
+var cur=new Date();cur.setDate(1);cur.setHours(0,0,0,0);
+function $(i){return document.getElementById(i)}
+function z(n){return String(n).padStart(2,"0")}
+function iso(y,m,d){return y+"-"+z(m+1)+"-"+z(d)}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+var now=new Date(),TODAY=iso(now.getFullYear(),now.getMonth(),now.getDate());
+function api(m,u,b){return fetch(u,{method:m,headers:{"Content-Type":"application/json","x-key":KEY},body:b?JSON.stringify(b):undefined}).then(function(r){
+ if(r.status==401){var k=prompt("Admin-Passwort eingeben:");if(!k)throw 0;KEY=k;try{localStorage.setItem("key",k)}catch(e){}return api(m,u,b)}
+ if(!r.ok)throw 0;return r.json()}).then(function(x){load();return x})}
+function load(){fetch("/api/data").then(function(r){return r.json()}).then(function(d){S=d;$("note").hidden=true;draw()}).catch(function(){$("note").hidden=false})}
+function draw(){
+ var dn=new Date(cur.getFullYear(),cur.getMonth()+1,0).getDate(),y=cur.getFullYear(),m=cur.getMonth();
+ $("ml").textContent=cur.toLocaleDateString("de-DE",{month:"long",year:"numeric"});
+ var emps=S.emps.slice().sort(function(a,b){return a.name.localeCompare(b.name)});
+ var h="<tr><th>Name</th>";
+ for(var d=1;d<=dn;d++){var w=new Date(y,m,d).getDay(),k=iso(y,m,d);h+='<th class="'+(w%6==0?"we ":"")+(k==TODAY?"td0":"")+'">'+d+"<br>"+WD[w]+"</th>"}
+ h+="</tr>";
+ emps.forEach(function(e){h+='<tr><td title="'+esc(e.name)+'">'+esc(e.name)+"</td>";
+  for(var d=1;d<=dn;d++){var k=iso(y,m,d),c=S.shifts[e.id+"|"+k],i=C.indexOf(c),w=new Date(y,m,d).getDay();
+   h+='<td class="c '+(w%6==0?"we ":"")+(i>-1?"c"+i:"")+'" data-e="'+e.id+'" data-d="'+k+'">'+(c?esc(c):"")+"</td>"}
+  h+="</tr>"});
+ $("g").innerHTML=emps.length?h:"<tr><td colspan=\"32\" style=\"padding:20px;color:var(--mute)\">Bitte zuerst Mitarbeiter hinzufügen oder importieren.</td></tr>";
+ var g={};emps.forEach(function(e){var c=S.shifts[e.id+"|"+TODAY];if(c)(g[c]=g[c]||[]).push(e.name)});
+ $("tt").textContent="Heute ("+WD[now.getDay()]+", "+TODAY+")";
+ $("sum").innerHTML=C.filter(function(c){return g[c]}).map(function(c){return'<div class="c'+C.indexOf(c)+'"><b>'+g[c].length+"</b>"+c+"<small>"+g[c].map(esc).join(", ")+"</small></div>"}).join("")||'<span class="sub">Für heute sind noch keine Schichten eingetragen.</span>';
+ $("el").innerHTML=emps.map(function(e){return'<div class="item"><span>'+esc(e.name)+'</span><button type="button" data-del="'+e.id+'">Löschen</button></div>'}).join("")}
+$("leg").innerHTML=C.map(function(c,i){return'<span class="c'+i+'">'+c+"</span>"}).join("");
+$("sb").innerHTML=C.map(function(c,i){return'<button type="button" class="c'+i+'" data-c="'+c+'">'+c+"</button>"}).join("")+'<button type="button" data-c="">Leeren</button><button type="button" data-c="#">Schließen</button>';
+$("g").onclick=function(ev){var t=ev.target;if(!t.dataset.e)return;P={e:t.dataset.e,d:t.dataset.d};
+ var e=S.emps.filter(function(x){return x.id===P.e})[0];$("st").textContent=(e?e.name:"")+" · "+P.d;$("until").value="";$("sheet").hidden=false};
+$("sb").onclick=function(ev){var c=ev.target.dataset.c;if(c===undefined)return;$("sheet").hidden=true;if(c==="#"||!P)return;
+ var e=S.emps.filter(function(x){return x.id===P.e})[0];if(!e)return;
+ var u=$("until").value,ds=[P.d];
+ if(u&&u>P.d){var t=new Date(P.d+"T12:00:00");while(ds.length<62){t.setDate(t.getDate()+1);var k2=iso(t.getFullYear(),t.getMonth(),t.getDate());if(k2>u)break;ds.push(k2)}}
+ var sh={};ds.forEach(function(d){sh[d]=c;var k=P.e+"|"+d;if(c)S.shifts[k]=c;else delete S.shifts[k]});draw();
+ api("POST","/api/bulk",{rows:[{name:e.name,shifts:sh}]}).catch(load)};
+$("pm").onclick=function(){cur.setMonth(cur.getMonth()-1);draw()};
+$("nm").onclick=function(){cur.setMonth(cur.getMonth()+1);draw()};
+$("ae").onclick=function(){var names=$("en").value.split(/\r?\n/).map(function(x){return x.trim()}).filter(Boolean);if(!names.length)return;
+ $("en").value="";api("POST","/api/bulk",{rows:names.map(function(n){return{name:n,shifts:{}}})}).catch(load)};
+document.addEventListener("click",function(ev){var id=ev.target.dataset.del;if(id&&confirm("Mitarbeiter und alle Schichten löschen?"))api("DELETE","/api/emps/"+id).catch(load)});
+function toISO(s){s=(s||"").trim();var m=s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2}|\d{4})$/);if(m)return(m[3].length==2?"20"+m[3]:m[3])+"-"+z(m[2])+"-"+z(m[1]);return/^\d{4}-\d{2}-\d{2}$/.test(s)?s:null}
+var MAP={"früh":"Früh","frueh":"Früh","fruh":"Früh","spät":"Spät","spaet":"Spät","spat":"Spät","tag":"Tag","frei":"Frei","u":"U","urlaub":"U","krank":"Krank","su":"SU","feiert.":"Feiert.","feiert":"Feiert.","feiertag":"Feiert.","early":"Früh","late":"Spät","day":"Tag","free":"Frei","sick":"Krank","off":"Frei"};
+$("imp").onclick=function(){var L=$("paste").value.split(/\r?\n/).map(function(l){return l.split("\t")}),hi=-1,ds=[];
+ for(var i=0;i<L.length&&hi<0;i++){var a=L[i].map(toISO);if(a.filter(Boolean).length>=3){hi=i;ds=a}}
+ if(hi<0){$("impm").textContent="Keine Datumszeile gefunden (z. B. 05.10.26). Bitte die Kopfzeile mit kopieren.";return}
+ var rows=[];for(var j=hi+1;j<L.length;j++){var nm=(L[j][0]||"").trim();if(!nm)continue;var sh={};
+  ds.forEach(function(d,x){if(d){var c=MAP[(L[j][x]||"").trim().toLowerCase()];if(c)sh[d]=c}});
+  if(Object.keys(sh).length)rows.push({name:nm,shifts:sh})}
+ if(!rows.length){$("impm").textContent="Keine Schichten gefunden. Bitte prüfen, ob Früh/Spät/Frei mitkopiert wurden.";return}
+ $("impm").textContent="Import läuft…";
+ api("POST","/api/bulk",{rows:rows}).then(function(){$("impm").textContent=rows.length+" Mitarbeiter importiert.";$("paste").value="";var f=ds.filter(Boolean)[0].split("-");cur=new Date(+f[0],+f[1]-1,1);draw()}).catch(function(){$("impm").textContent="Import fehlgeschlagen."})};
+function setTheme(t){document.documentElement.dataset.theme=t;try{localStorage.setItem("theme",t)}catch(e){}$("theme").textContent=t==="dark"?"☀️ Hell":"🌙 Dunkel"}
+var th=null;try{th=localStorage.getItem("theme")}catch(e){}
+if(!th)th=matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light";
+setTheme(th);
+$("theme").onclick=function(){setTheme(document.documentElement.dataset.theme==="dark"?"light":"dark")};
+$("td").onclick=function(){cur=new Date(now.getFullYear(),now.getMonth(),1);draw()};
+load();setInterval(function(){if($("sheet").hidden)load()},4000);
+</script>
+</body>
+</html>
