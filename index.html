@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de" translate="no">
 <head>
 <meta charset="utf-8">
+<meta name="google" content="notranslate">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#C41E3A">
 <title>Arcese Deutschland – Dienstplan</title>
@@ -405,6 +406,16 @@ textarea {
   #sheet .b { grid-template-columns: repeat(2, 1fr); }
   .header-actions { gap: 6px; }
 }
+.mgr{display:none}
+body.edit-mode .mgr{display:block}
+td.c{cursor:default}
+body.edit-mode td.c{cursor:pointer}
+body:not(.edit-mode) td.c:hover{filter:none}
+#me{width:100%;max-width:360px;margin:6px 0 12px}
+.mine-list{display:grid;gap:6px}
+.mine-row{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-radius:10px;border:1px solid var(--line)}
+.mine-row.today{outline:2px solid var(--acc);outline-offset:-2px}
+.mine-row b{font-weight:650;padding:2px 10px;border-radius:8px}
 </style>
 </head>
 <body>
@@ -418,11 +429,13 @@ textarea {
       </div>
     </div>
     <div class="header-actions">
+      <button type="button" class="icon-btn" id="login"></button>
       <button type="button" class="icon-btn" id="lang" title="Language">🇩🇪 DE</button>
       <button type="button" class="icon-btn" id="theme" title="Theme"></button>
     </div>
   </div>
-  <p class="sub" data-i18n="subtitle">Tap a cell to change the shift · Früh · Spät · Tag · Frei · Urlaub · Krank</p>
+  <p class="sub" data-i18n="subtitle">Live duty roster</p>
+  <p class="sub mgr" data-i18n="subtitle_edit">Manager mode: tap a cell to change the shift.</p>
 
   <p class="card" id="note" hidden data-i18n="offline">No connection to server. Please try again later.</p>
 
@@ -442,21 +455,27 @@ textarea {
     <div class="leg" id="leg"></div>
   </section>
 
-  <section class="card">
+  <section class="card" id="minecard">
+    <h2 data-i18n="mine_title">My shifts</h2>
+    <select id="me" aria-label="Name"></select>
+    <div id="mine-list" class="mine-list"></div>
+  </section>
+
+  <section class="card mgr">
     <h2 data-i18n="import_title">New month / Import roster</h2>
     <p class="sub" style="margin-bottom:10px" data-i18n="import_help">Select the roster in Excel (name column + date row), copy, paste here and click Import.</p>
     <textarea id="paste" data-i18n-placeholder="paste_ph" placeholder="Paste here…"></textarea>
     <p><button class="p" id="imp" type="button" data-i18n="import_btn">Import</button> <span id="impm"></span></p>
   </section>
 
-  <section class="card">
+  <section class="card mgr">
     <h2 data-i18n="emps_title">Employees</h2>
     <textarea id="en" data-i18n-placeholder="emps_ph" placeholder="One name per line (multiple at once possible)"></textarea>
     <p><button class="p" id="ae" type="button" data-i18n="add_btn">Add</button></p>
     <div id="el"></div>
   </section>
 
-  <section class="card">
+  <section class="card mgr">
     <h2 data-i18n="pw_title">Password</h2>
     <p><input type="password" id="pw1" autocomplete="new-password" data-i18n-placeholder="pw_new" placeholder="New password"></p>
     <p><input type="password" id="pw2" autocomplete="new-password" data-i18n-placeholder="pw_repeat" placeholder="Repeat password"></p>
@@ -477,7 +496,7 @@ try { LANG = localStorage.getItem("lang") || "de"; } catch(e) {}
 var I18N = {
   de: {
     tagline: "Live-Dienstplan",
-    subtitle: "Zelle antippen, um die Schicht zu ändern · Früh · Spät · Tag · Frei · Urlaub · Krank",
+    subtitle: "Aktueller Dienstplan · Früh · Spät · Tag · Frei · Urlaub · Krank",
     offline: "Keine Verbindung zum Server. Bitte später erneut versuchen.",
     today: "Heute",
     import_title: "Neuer Monat / Dienstplan importieren",
@@ -495,10 +514,20 @@ var I18N = {
     pw_short: "Mindestens 8 Zeichen.",
     pw_mismatch: "Die Passwörter stimmen nicht überein.",
     pw_fail: "Passwort konnte nicht geändert werden.",
+    login_btn: "Manager-Login",
+    logout_btn: "Abmelden",
+    login_prompt: "Manager-Passwort eingeben:",
+    mine_title: "Meine Schichten",
+    mine_pick: "Name auswählen …",
+    mine_hint: "Wähle deinen Namen, um deine Schichten der nächsten 14 Tage zu sehen.",
+    subtitle_edit: "Manager-Modus: Zelle antippen, um die Schicht zu ändern.",
     until_label: "Bis Datum (optional):",
     empty_table: "Bitte zuerst Mitarbeiter hinzufügen oder importieren.",
     no_shifts: "Für heute sind noch keine Schichten eingetragen.",
     delete_confirm: "Mitarbeiter und alle Schichten löschen?",
+    err_pw: "Falsches Passwort.",
+    err_many: "Zu viele Fehlversuche. Bitte 10 Minuten warten.",
+    err_fail: "Aktion fehlgeschlagen.",
     delete_btn: "Löschen",
     clear_btn: "Leeren",
     close_btn: "Schließen",
@@ -514,7 +543,7 @@ var I18N = {
   },
   en: {
     tagline: "Live Duty Roster",
-    subtitle: "Tap a cell to change the shift · Early · Late · Day · Off · Vacation · Sick",
+    subtitle: "Current duty roster · Early · Late · Day · Off · Vacation · Sick",
     offline: "No connection to server. Please try again later.",
     today: "Today",
     import_title: "New month / Import roster",
@@ -532,10 +561,20 @@ var I18N = {
     pw_short: "At least 8 characters.",
     pw_mismatch: "The passwords do not match.",
     pw_fail: "Could not change the password.",
+    login_btn: "Manager login",
+    logout_btn: "Log out",
+    login_prompt: "Enter manager password:",
+    mine_title: "My shifts",
+    mine_pick: "Select your name …",
+    mine_hint: "Select your name to see your shifts for the next 14 days.",
+    subtitle_edit: "Manager mode: tap a cell to change the shift.",
     until_label: "Until date (optional):",
     empty_table: "Please add or import employees first.",
     no_shifts: "No shifts scheduled for today.",
     delete_confirm: "Delete employee and all shifts?",
+    err_pw: "Wrong password.",
+    err_many: "Too many failed attempts. Please wait 10 minutes.",
+    err_fail: "Action failed.",
     delete_btn: "Delete",
     clear_btn: "Clear",
     close_btn: "Close",
@@ -564,6 +603,7 @@ function applyI18n(){
     el.placeholder = t(el.getAttribute("data-i18n-placeholder"));
   });
   $("lang").textContent = LANG === "de" ? "🇬🇧 EN" : "🇩🇪 DE";
+  $("login").textContent = t(EDIT ? "logout_btn" : "login_btn");
   setTheme(document.documentElement.dataset.theme || "light");
 }
 
@@ -577,9 +617,22 @@ function z(n){return String(n).padStart(2,"0")}
 function iso(y,m,d){return y+"-"+z(m+1)+"-"+z(d)}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
 var now=new Date(),TODAY=iso(now.getFullYear(),now.getMonth(),now.getDate());
-function api(m,u,b){return fetch(u,{method:m,headers:{"Content-Type":"application/json","x-key":KEY},body:b?JSON.stringify(b):undefined}).then(function(r){
- if(r.status==401){var k=prompt(t("pwd_prompt"));if(!k)throw 0;KEY=k;try{localStorage.setItem("key",k)}catch(e){}return api(m,u,b)}
- if(!r.ok)throw 0;return r.json()}).then(function(x){load();return x})}
+function api(m,u,b,again){return fetch(u,{method:m,headers:{"Content-Type":"application/json","x-key":KEY},body:b?JSON.stringify(b):undefined}).then(function(r){
+ if(r.status==401){alert(t("err_pw"));KEY="";try{localStorage.removeItem("key")}catch(e){}setEdit(false);throw 0}
+ if(r.status==429){alert(t("err_many"));throw 0}
+ if(!r.ok){alert(t("err_fail"));throw 0}return r.json()}).then(function(x){load();return x})}
+var EDIT=false;
+function setEdit(v){EDIT=v;document.body.classList.toggle("edit-mode",v);$("login").textContent=t(v?"logout_btn":"login_btn");if(!v)$("sheet").hidden=true}
+var ME="";try{ME=localStorage.getItem("me")||""}catch(e){}
+function renderMine(){
+ var emps=S.emps.slice().sort(function(a,b){return a.name.localeCompare(b.name)});
+ $("me").innerHTML='<option value="">'+t("mine_pick")+'</option>'+emps.map(function(e){return'<option value="'+e.id+'"'+(e.id===ME?" selected":"")+'>'+esc(e.name)+'</option>'}).join("");
+ var out="",wds=LANG==="de"?WD:WD_EN;
+ if(ME&&emps.some(function(e){return e.id===ME})){
+  for(var i=0;i<14;i++){var d=new Date(now.getFullYear(),now.getMonth(),now.getDate()+i),k=iso(d.getFullYear(),d.getMonth(),d.getDate()),c=S.shifts[ME+"|"+k]||"",ci=C.indexOf(c);
+   out+='<div class="mine-row'+(i===0?" today":"")+'"><span>'+wds[d.getDay()]+", "+z(d.getDate())+"."+z(d.getMonth()+1)+".</span><b class=\""+(ci>-1?"c"+ci:"")+'">'+(c?esc(c):"–")+"</b></div>"}
+ } else out='<p class="sub">'+t("mine_hint")+"</p>";
+ $("mine-list").innerHTML=out}
 function load(){fetch("/api/data").then(function(r){return r.json()}).then(function(d){S=d;try{lastJSON=JSON.stringify(d)}catch(e){}$("note").hidden=true;draw()}).catch(function(){$("note").hidden=false})}
 function draw(){
  var dn=new Date(cur.getFullYear(),cur.getMonth()+1,0).getDate(),y=cur.getFullYear(),m=cur.getMonth();
@@ -598,15 +651,15 @@ function draw(){
  var g={};emps.forEach(function(e){var c=S.shifts[e.id+"|"+TODAY];if(c)(g[c]=g[c]||[]).push(e.name)});
  $("tt").textContent=t("today")+" ("+wds[now.getDay()]+", "+TODAY+")";
  $("sum").innerHTML=C.filter(function(c){return g[c]}).map(function(c){return'<div class="c'+C.indexOf(c)+'"><b>'+g[c].length+"</b>"+c+"<small>"+g[c].map(esc).join(", ")+"</small></div>"}).join("")||'<span class="sub">'+t("no_shifts")+'</span>';
- $("el").innerHTML=emps.map(function(e){return'<div class="item"><span>'+esc(e.name)+'</span><button type="button" data-del="'+e.id+'">'+t("delete_btn")+'</button></div>'}).join("")}
+ $("el").innerHTML=emps.map(function(e){return'<div class="item"><span>'+esc(e.name)+'</span><button type="button" data-del="'+e.id+'">'+t("delete_btn")+'</button></div>'}).join("");renderMine()}
 $("leg").innerHTML=C.map(function(c,i){return'<span class="c'+i+'">'+c+"</span>"}).join("");
 function rebuildSheetButtons(){
   $("sb").innerHTML=C.map(function(c,i){return'<button type="button" class="c'+i+'" data-c="'+c+'">'+c+"</button>"}).join("")+'<button type="button" data-c="">'+t("clear_btn")+'</button><button type="button" data-c="#">'+t("close_btn")+'</button>';
 }
 rebuildSheetButtons();
-$("g").onclick=function(ev){var t=ev.target;if(!t.dataset.e)return;P={e:t.dataset.e,d:t.dataset.d};
+$("g").onclick=function(ev){if(!EDIT)return;var t=ev.target.closest("td[data-e]");if(!t)return;P={e:t.dataset.e,d:t.dataset.d};
  var e=S.emps.filter(function(x){return x.id===P.e})[0];$("st").textContent=(e?e.name:"")+" · "+P.d;$("until").value="";$("sheet").hidden=false};
-$("sb").onclick=function(ev){var c=ev.target.dataset.c;if(c===undefined)return;$("sheet").hidden=true;if(c==="#"||!P)return;
+$("sb").onclick=function(ev){var cb=ev.target.closest("[data-c]");if(!cb||!EDIT)return;var c=cb.getAttribute("data-c");$("sheet").hidden=true;if(c==="#"||!P)return;
  var e=S.emps.filter(function(x){return x.id===P.e})[0];if(!e)return;
  var u=$("until").value,ds=[P.d];
  if(u&&u>P.d){var t=new Date(P.d+"T12:00:00");while(ds.length<62){t.setDate(t.getDate()+1);var k2=iso(t.getFullYear(),t.getMonth(),t.getDate());if(k2>u)break;ds.push(k2)}}
@@ -616,7 +669,7 @@ $("pm").onclick=function(){cur.setMonth(cur.getMonth()-1);draw()};
 $("nm").onclick=function(){cur.setMonth(cur.getMonth()+1);draw()};
 $("ae").onclick=function(){var names=$("en").value.split(/\r?\n/).map(function(x){return x.trim()}).filter(Boolean);if(!names.length)return;
  $("en").value="";api("POST","/api/bulk",{rows:names.map(function(n){return{name:n,shifts:{}}})}).catch(load)};
-document.addEventListener("click",function(ev){var id=ev.target.dataset.del;if(id&&confirm(t("delete_confirm")))api("DELETE","/api/emps/"+id).catch(load)});
+document.addEventListener("click",function(ev){var db=ev.target.closest&&ev.target.closest("[data-del]");var id=db&&db.dataset.del;if(!EDIT)return;if(id&&confirm(t("delete_confirm")))api("DELETE","/api/emps/"+id).catch(load)});
 function toISO(s){s=(s||"").trim();var m=s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2}|\d{4})$/);if(m)return(m[3].length==2?"20"+m[3]:m[3])+"-"+z(m[2])+"-"+z(m[1]);return/^\d{4}-\d{2}-\d{2}$/.test(s)?s:null}
 var MAP={"früh":"Früh","frueh":"Früh","fruh":"Früh","spät":"Spät","spaet":"Spät","spat":"Spät","tag":"Tag","frei":"Frei","u":"U","urlaub":"U","krank":"Krank","su":"SU","feiert.":"Feiert.","feiert":"Feiert.","feiertag":"Feiert.","early":"Früh","late":"Spät","day":"Tag","free":"Frei","sick":"Krank","off":"Frei","vacation":"U"};
 $("imp").onclick=function(){var L=$("paste").value.split(/\r?\n/).map(function(l){return l.split("\t")}),hi=-1,ds=[];
@@ -637,6 +690,13 @@ var th=null;try{th=localStorage.getItem("theme")}catch(e){}
 if(!th)th=matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light";
 setTheme(th);
 $("theme").onclick=function(){setTheme(document.documentElement.dataset.theme==="dark"?"light":"dark")};
+$("me").onchange=function(){ME=this.value;try{localStorage.setItem("me",ME)}catch(e){}renderMine()};
+function probe(k,cb){fetch("/api/bulk",{method:"POST",headers:{"Content-Type":"application/json","x-key":k},body:'{"rows":[]}'}).then(cb).catch(function(){alert(t("err_fail"))})}
+$("login").onclick=function(){
+ if(EDIT){KEY="";try{localStorage.removeItem("key")}catch(e){}setEdit(false);return}
+ var k=prompt(t("login_prompt"));if(!k)return;
+ probe(k,function(r){if(r.status==429){alert(t("err_many"));return}if(r.ok){KEY=k;try{localStorage.setItem("key",k)}catch(e){}setEdit(true)}else alert(t("err_pw"))})};
+if(KEY)probe(KEY,function(r){if(r.ok)setEdit(true);else{KEY="";try{localStorage.removeItem("key")}catch(e){}}});
 $("lang").onclick=function(){
   LANG = LANG === "de" ? "en" : "de";
   try{localStorage.setItem("lang",LANG)}catch(e){}
